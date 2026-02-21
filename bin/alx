@@ -1,0 +1,153 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+LIB_DIR="${SCRIPT_DIR%/}/../lib"
+
+# shellcheck disable=SC1090
+. "$LIB_DIR/util.sh"
+# shellcheck disable=SC1090
+. "$LIB_DIR/logger.sh"
+# shellcheck disable=SC1090
+. "$LIB_DIR/store.sh"
+# shellcheck disable=SC1090
+. "$LIB_DIR/json.sh"
+# shellcheck disable=SC1090
+. "$LIB_DIR/conflict.sh"
+# shellcheck disable=SC1090
+. "$LIB_DIR/actions.sh"
+# shellcheck disable=SC1090
+. "$LIB_DIR/export.sh"
+# shellcheck disable=SC1090
+. "$LIB_DIR/import.sh"
+# shellcheck disable=SC1090
+. "$LIB_DIR/interactive.sh"
+# shellcheck disable=SC1090
+. "$LIB_DIR/doctor.sh"
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  alx name="command" [--desc TEXT] [--tags a,b]
+  alx add <name> <command> [--desc TEXT] [--tags a,b] [--force] [--strict]
+  alx remove <name>
+  alx list
+  alx search <pattern>
+  alx show <name>
+  alx where <name>
+  alx run <name>
+  alx export --shell
+  alx import <file> [--force] [--strict]
+  alx doctor
+  alx pick [--exec]
+  alx --immediate name="command" [--desc TEXT] [--tags a,b]
+USAGE
+}
+
+if [[ ${1-} == "--help" || ${1-} == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+immediate=0
+if [[ ${1-} == "--immediate" ]]; then
+  immediate=1
+  shift
+fi
+
+if [[ $# -eq 0 ]]; then
+  usage
+  exit 1
+fi
+
+cmd=${1-}
+shift || true
+
+# Primary syntax: name=command
+if [[ $cmd == *=* && $cmd != "add" && $cmd != "remove" && $cmd != "list" && $cmd != "search" && $cmd != "show" && $cmd != "where" && $cmd != "run" && $cmd != "export" && $cmd != "import" && $cmd != "doctor" && $cmd != "pick" ]]; then
+  name=${cmd%%=*}
+  command=${cmd#*=}
+  parse_add_flags "$@"
+  add_alias "$name" "$command" "$ALX_DESC" "$ALX_TAGS" "$immediate"
+  exit 0
+fi
+
+case "$cmd" in
+  add)
+    if [[ $# -lt 2 ]]; then
+      usage
+      exit 1
+    fi
+    name=$1
+    shift
+    command=$1
+    shift
+    parse_add_flags "$@"
+    add_alias "$name" "$command" "$ALX_DESC" "$ALX_TAGS" 0
+    ;;
+  remove)
+    if [[ $# -ne 1 ]]; then
+      usage
+      exit 1
+    fi
+    remove_alias "$1"
+    ;;
+  list)
+    list_aliases
+    ;;
+  search)
+    if [[ $# -ne 1 ]]; then
+      usage
+      exit 1
+    fi
+    search_aliases "$1"
+    ;;
+  show)
+    if [[ $# -ne 1 ]]; then
+      usage
+      exit 1
+    fi
+    show_alias "$1"
+    ;;
+  where)
+    if [[ $# -ne 1 ]]; then
+      usage
+      exit 1
+    fi
+    where_alias "$1"
+    ;;
+  run)
+    if [[ $# -ne 1 ]]; then
+      usage
+      exit 1
+    fi
+    run_alias "$1"
+    ;;
+  export)
+    if [[ ${1-} != "--shell" ]]; then
+      usage
+      exit 1
+    fi
+    export_aliases
+    ;;
+  import)
+    if [[ $# -lt 1 ]]; then
+      usage
+      exit 1
+    fi
+    file=$1
+    shift
+    parse_import_flags "$@"
+    import_aliases "$file"
+    ;;
+  doctor)
+    doctor
+    ;;
+  pick)
+    pick_alias "$@"
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac

@@ -11,6 +11,7 @@ pick_alias() {
   ensure_store
 
   local items=()
+  local tab=$'\t'
   while IFS= read -r entry; do
     local name desc tags
     if is_jq_available; then
@@ -34,7 +35,7 @@ PY
 )
     fi
     if [[ -n $name ]]; then
-      items+=("${name}\t${desc}\t${tags}")
+      items+=("${name}${tab}${desc}${tab}${tags}")
     fi
   done < <(json_all_entries)
 

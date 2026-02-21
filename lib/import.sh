@@ -40,6 +40,8 @@ import_aliases() {
     if [[ $line =~ ^alias[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
       local name=${BASH_REMATCH[1]}
       local rhs=${BASH_REMATCH[2]}
+      rhs=${rhs#"${rhs%%[![:space:]]*}"}
+      rhs=${rhs%"${rhs##*[![:space:]]}"}
       local cmd=""
       if [[ $rhs =~ ^\'(.*)\'$ ]]; then
         cmd=${BASH_REMATCH[1]}

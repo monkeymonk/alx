@@ -2,10 +2,24 @@
 
 A structured, metadata-aware superset of shell `alias` that exports real aliases with deterministic, reversible metadata.
 
-## Installation
+## Install
 
-1. Add `bin/alx` to your PATH.
-2. `jq` is optional; if installed it is used for faster JSON handling.
+Use the install script (it downloads the core files and updates your shell rc):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/monkeymonk/alx/main/install.sh | bash
+```
+
+What the installer does:
+- Installs `alx` to `~/.local/share/alx/bin/alx`.
+- Installs `lib/*.sh` to `~/.local/share/alx/lib/`.
+- Adds `~/.local/share/alx/bin` to your PATH in your shell rc file.
+
+To uninstall, remove the PATH line from your rc file and delete `~/.local/share/alx/`.
+
+If you prefer manual install, add `bin/alx` to your PATH.
+
+`jq` is optional; if installed it is used for faster JSON handling.
 
 ## Usage
 

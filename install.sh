@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ALX_REPO="https://raw.githubusercontent.com/monkeymonk/alx/main"
+ALX_DATA="${XDG_DATA_HOME:-$HOME/.local/share}/alx"
+ALX_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/alx"
+
+_detect_shell_rc() {
+  if [[ -n "${ZSH_VERSION:-}" ]] || [[ "$SHELL" == */zsh ]]; then
+    echo "$HOME/.zshrc"
+  else
+    echo "$HOME/.bashrc"
+  fi
+}
+
+_download() {
+  local url="$1" dest="$2"
+  if command -v curl &>/dev/null; then
+    curl -fsSL "$url" -o "$dest"
+  elif command -v wget &>/dev/null; then
+    wget -qO "$dest" "$url"
+  else
+    echo "alx install: curl or wget required" >&2
+    exit 1
+  fi
+}
+
+_patch_rc() {
+  local rc="$1"
+  local line="export PATH=\"$ALX_DATA/bin:\$PATH\""
+  if grep -qF "$line" "$rc" 2>/dev/null; then
+    echo "alx: already on PATH in $rc"
+  else
+    echo "" >> "$rc"
+    echo "# alx — alias registry" >> "$rc"
+    echo "$line" >> "$rc"
+    echo "alx: added PATH line to $rc"
+  fi
+}
+
+echo "Installing alx..."
+
+mkdir -p "$ALX_DATA/bin" "$ALX_DATA/lib" "$ALX_CONFIG"
+
+_download "$ALX_REPO/bin/alx" "$ALX_DATA/bin/alx"
+chmod +x "$ALX_DATA/bin/alx"
+
+for lib in actions conflict doctor export import interactive json logger parser store util; do
+  _download "$ALX_REPO/lib/${lib}.sh" "$ALX_DATA/lib/${lib}.sh"
+done
+
+SHELL_RC="$(_detect_shell_rc)"
+_patch_rc "$SHELL_RC"
+
+echo ""
+echo "alx installed."
+echo "Restart your shell or run: source $SHELL_RC"

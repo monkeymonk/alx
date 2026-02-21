@@ -21,7 +21,6 @@ PY
       error "invalid JSON in store"
       exit 3
     fi
-    warn "jq not found: limited diagnostics"
   fi
 
   if is_jq_available; then
@@ -34,6 +33,64 @@ PY
 
     local dup
     dup=$(read_store | jq -r 'to_entries | group_by(.value.cmd) | map(select(length>1)) | .[] | map(.key) | @tsv')
+    if [[ -n $dup ]]; then
+      warn "duplicate commands detected:"
+      printf '%s\n' "$dup" >&2
+    fi
+  else
+    local broken
+    broken=$(read_store | python3 - <<'PY'
+import json,sys
+try:
+    data=json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+out=[]
+for k,v in data.items():
+    if not isinstance(v, dict):
+        out.append(k)
+        continue
+    if not isinstance(v.get("cmd"), str) or len(v.get("cmd",""))==0:
+        out.append(k)
+        continue
+    origin=v.get("origin") or {}
+    if not isinstance(origin.get("type"), str) or len(origin.get("type",""))==0:
+        out.append(k)
+        continue
+    if not isinstance(v.get("created_at"), str) or len(v.get("created_at",""))==0:
+        out.append(k)
+        continue
+    if not isinstance(v.get("tags"), list):
+        out.append(k)
+        continue
+print("\\n".join(out))
+PY
+)
+    if [[ -n $broken ]]; then
+      warn "broken metadata for:"
+      printf '%s\n' "$broken" >&2
+    fi
+
+    local dup
+    dup=$(read_store | python3 - <<'PY'
+import json,sys
+try:
+    data=json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+by_cmd={}
+for k,v in data.items():
+    cmd=v.get("cmd")
+    if cmd is None:
+        continue
+    by_cmd.setdefault(cmd, []).append(k)
+out=[]
+for cmd,names in by_cmd.items():
+    if len(names)>1:
+        out.append("\\t".join(sorted(names)))
+print("\\n".join(out))
+PY
+)
     if [[ -n $dup ]]; then
       warn "duplicate commands detected:"
       printf '%s\n' "$dup" >&2

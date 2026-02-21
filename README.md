@@ -5,7 +5,7 @@ A structured, metadata-aware superset of shell `alias` that exports real aliases
 ## Installation
 
 1. Add `bin/alx` to your PATH.
-2. Ensure `jq` is installed for full functionality.
+2. `jq` is optional; if installed it is used for faster JSON handling.
 
 ## Usage
 
@@ -86,4 +86,5 @@ Aliases are stored in:
 ## Requirements
 
 - Bash 4+ or Zsh 5+
-- `jq` for write operations (add/remove/import)
+- Python 3
+- `jq` optional

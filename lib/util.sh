@@ -105,8 +105,5 @@ split_tags_json() {
 }
 
 require_jq_write() {
-  if ! is_jq_available; then
-    error "jq is required for write operations. Read-only mode only."
-    exit 1
-  fi
+  return 0
 }

@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)"
-ALX_BIN="$ROOT_DIR/bin/alx"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+# shellcheck disable=SC1091
+. "$SCRIPT_DIR/_helpers.sh"
 
-if ! command -v jq >/dev/null 2>&1; then
-  echo "jq not installed; skipping" >&2
-  exit 0
-fi
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ALX_BIN="$ROOT_DIR/bin/alx"
 
 temp_dir="$(mktemp -d)"
 cleanup() { rm -rf "$temp_dir"; }
@@ -20,10 +19,10 @@ export XDG_CONFIG_HOME="$temp_dir/config"
 
 store="$XDG_CONFIG_HOME/alx/aliases.json"
 
-jq -e '.gs.cmd == "git status"' "$store" >/dev/null
-jq -e '.gs.desc == "Git status"' "$store" >/dev/null
-jq -e '.gs.tags == ["git","core"]' "$store" >/dev/null
-jq -e '.gs.origin.type == "manual"' "$store" >/dev/null
+assert_eq "git status" "$(json_get "$store" "gs.cmd")" "gs cmd"
+assert_eq "Git status" "$(json_get "$store" "gs.desc")" "gs desc"
+assert_eq "[\"git\", \"core\"]" "$(json_get "$store" "gs.tags")" "gs tags"
+assert_eq "manual" "$(json_get "$store" "gs.origin.type")" "gs origin.type"
 
 export_file="$temp_dir/export.sh"
 "$ALX_BIN" export --shell > "$export_file"
@@ -33,17 +32,17 @@ export XDG_CONFIG_HOME="$temp_dir/import-config"
 "$ALX_BIN" import "$export_file"
 store2="$XDG_CONFIG_HOME/alx/aliases.json"
 
-jq -e '.gs.cmd == "git status"' "$store2" >/dev/null
-jq -e '.gs.desc == "Git status"' "$store2" >/dev/null
-jq -e '.gs.tags == ["git","core"]' "$store2" >/dev/null
-jq -e '.gs.origin.type == "import"' "$store2" >/dev/null
+assert_eq "git status" "$(json_get "$store2" "gs.cmd")" "import gs cmd"
+assert_eq "Git status" "$(json_get "$store2" "gs.desc")" "import gs desc"
+assert_eq "[\"git\", \"core\"]" "$(json_get "$store2" "gs.tags")" "import gs tags"
+assert_eq "import" "$(json_get "$store2" "gs.origin.type")" "import gs origin.type"
 
 # Legacy import
 legacy_file="$temp_dir/legacy.sh"
 printf "alias l='ls -1'\n" > "$legacy_file"
 "$ALX_BIN" import "$legacy_file"
 
-jq -e '.l.origin.type == "legacy-import"' "$store2" >/dev/null
+assert_eq "legacy-import" "$(json_get "$store2" "l.origin.type")" "legacy import type"
 
 # Deterministic export order
 export_out="$temp_dir/export2.sh"

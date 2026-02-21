@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 failures=0
 
 for test in "$SCRIPT_DIR"/*.sh; do
-  if [[ $test == "$SCRIPT_DIR/run.sh" ]]; then
+  if [[ $test == "$SCRIPT_DIR/run.sh" || $test == "$SCRIPT_DIR/_helpers.sh" ]]; then
     continue
   fi
   if ! bash "$test"; then

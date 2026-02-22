@@ -16,7 +16,8 @@ now_utc() {
 
 valid_name() {
   local name="$1"
-  [[ $name =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]
+  # Match shell alias naming: any non-empty token without whitespace or '='.
+  [[ $name =~ ^[^[:space:]=]+$ ]]
 }
 
 shell_escape_single() {

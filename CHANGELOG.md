@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3
+
+- Allow non-identifier alias names (matching shell alias rules)
+- Only warn on binary shadowing when `--strict` is used
+- Only warn on function shadowing when `--strict` is used
+
 ## 0.1.2
 
 - Make `alx add` idempotent by default (no-op if alias exists)

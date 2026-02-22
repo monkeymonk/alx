@@ -25,8 +25,10 @@ conflict_check() {
 
   if type "$name" 2>/dev/null | grep -q "function"; then
     if [[ $force -ne 1 ]]; then
-      warn "function '$name' exists (use --force)"
-      exit 2
+      if [[ $strict -eq 1 ]]; then
+        warn "function '$name' exists (use --force or drop --strict)"
+        exit 2
+      fi
     fi
   fi
 
@@ -34,8 +36,6 @@ conflict_check() {
     if [[ $strict -eq 1 ]]; then
       warn "binary '$name' exists (use --force or drop --strict)"
       exit 2
-    else
-      warn "binary '$name' exists"
     fi
   fi
 }

@@ -56,6 +56,12 @@ alx show gs
 alx search git
 ```
 
+Help:
+
+```bash
+alx help
+```
+
 Import and export:
 
 ```bash
@@ -102,3 +108,7 @@ Aliases are stored in:
 - Bash 4+ or Zsh 5+
 - Python 3
 - `jq` optional
+
+## License
+
+MIT

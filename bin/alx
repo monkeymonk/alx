@@ -41,6 +41,7 @@ Usage:
   alx doctor
   alx pick [--exec]
   alx --immediate name="command" [--desc TEXT] [--tags a,b]
+  alx help
 USAGE
 }
 
@@ -145,6 +146,9 @@ case "$cmd" in
     ;;
   pick)
     pick_alias "$@"
+    ;;
+  help)
+    usage
     ;;
   *)
     usage

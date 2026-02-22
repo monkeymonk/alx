@@ -1,14 +1,12 @@
 # Changelog
 
-## 0.3.0
+## 0.1.1
 
-- Add import parsing edge-case tests and picker tests
-- Fix import whitespace handling and pick tab formatting
-
-## 0.2.0
-
-- Make jq optional with Python JSON fallback for write operations
-- Expand test coverage across core commands
+- Add installer and documentation updates
+- Add CONTRIBUTING, editorconfig, gitattributes, and MIT license
+- Add `alx help`
+- Improve import parsing and picker formatting
+- Expand test coverage, including import/pick edge cases
 
 ## 0.1.0
 

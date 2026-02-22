@@ -54,6 +54,7 @@ List, show, search:
 
 ```bash
 alx list
+alx list --table
 alx show gs
 alx search git
 ```
@@ -76,6 +77,12 @@ Interactive picker:
 ```bash
 alx pick
 alx pick --exec
+```
+
+FZF search (custom):
+
+```bash
+alx list | fzf --with-nth=1,2,3 --delimiter=$'\t' | cut -f1
 ```
 
 ## Philosophy

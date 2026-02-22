@@ -4,6 +4,12 @@
 
 - Installer now defaults to latest release tag instead of `main`
 
+## 0.1.5
+
+- Add `alx list --table` for a cleaner, headered listing
+- Document fzf-based alias search example
+- Add `-v`/`--version` flag
+
 ## 0.1.3
 
 - Allow non-identifier alias names (matching shell alias rules)

@@ -49,7 +49,13 @@ remove_alias() {
 }
 
 list_aliases() {
+  local format="tsv"
+  if [[ ${1-} == "--table" || ${1-} == "--pretty" ]]; then
+    format="table"
+  fi
+
   ensure_store
+  local rows=()
   while IFS= read -r entry; do
     local name cmd desc tags
     if is_jq_available; then
@@ -78,8 +84,34 @@ PY
     if [[ -z $name ]]; then
       continue
     fi
-    printf '%s\t%s\t%s\t%s\n' "$name" "$cmd" "$desc" "$tags"
+
+    if [[ $format == "table" ]]; then
+      cmd=${cmd//$'\t'/ }
+      desc=${desc//$'\t'/ }
+      tags=${tags//$'\t'/ }
+      rows+=("${name}"$'\t'"${cmd}"$'\t'"${desc}"$'\t'"${tags}")
+    else
+      printf '%s\t%s\t%s\t%s\n' "$name" "$cmd" "$desc" "$tags"
+    fi
   done < <(json_all_entries)
+
+  if [[ $format == "table" ]]; then
+    printf '%s\n' "${rows[@]}" | python3 -c 'import sys
+headers = ["NAME", "COMMAND", "DESCRIPTION", "TAGS"]
+rows = [line.rstrip("\n").split("\t") for line in sys.stdin if line.strip("\n") != ""]
+widths = [len(h) for h in headers]
+for row in rows:
+    for i, value in enumerate(row):
+        if i < len(widths):
+            widths[i] = max(widths[i], len(value))
+def format_row(values):
+    padded = [values[i].ljust(widths[i]) for i in range(len(widths))]
+    return " | ".join(padded)
+print(format_row(headers))
+print("-+-".join("-" * w for w in widths))
+for row in rows:
+    print(format_row(row))'
+  fi
 }
 
 search_aliases() {

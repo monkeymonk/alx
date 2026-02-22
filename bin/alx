@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ALX_VERSION="0.1.5"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 LIB_DIR="${SCRIPT_DIR%/}/../lib"
 
@@ -26,12 +28,15 @@ LIB_DIR="${SCRIPT_DIR%/}/../lib"
 . "$LIB_DIR/doctor.sh"
 
 usage() {
-  cat <<'USAGE'
+  cat <<USAGE
+alx v$ALX_VERSION
+
 Usage:
   alx name="command" [--desc TEXT] [--tags a,b]
   alx add <name> <command> [--desc TEXT] [--tags a,b] [--force] [--strict]
   alx remove <name>
-  alx list
+  alx list [--table]
+  alx -v|--version
   alx search <pattern>
   alx show <name>
   alx where <name>
@@ -47,6 +52,10 @@ USAGE
 
 if [[ ${1-} == "--help" || ${1-} == "-h" ]]; then
   usage
+  exit 0
+fi
+if [[ ${1-} == "--version" || ${1-} == "-v" ]]; then
+  printf '%s\n' "$ALX_VERSION"
   exit 0
 fi
 
@@ -94,7 +103,7 @@ case "$cmd" in
     remove_alias "$1"
     ;;
   list)
-    list_aliases
+    list_aliases "$@"
     ;;
   search)
     if [[ $# -ne 1 ]]; then

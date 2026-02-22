@@ -36,6 +36,8 @@ Explicit form:
 alx add gs "git status" --desc "Git status" --tags git
 ```
 
+By default, `alx add` is idempotent: if the alias already exists in the registry, it is a no-op. Use `--strict` to warn on existing aliases, or `--force` to overwrite.
+
 Export to your shell:
 
 ```bash

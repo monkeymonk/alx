@@ -16,7 +16,16 @@ add_alias() {
   require_jq_write
   ensure_store
 
-  conflict_check "$name" "$ALX_FORCE" "$ALX_STRICT"
+  if json_has_alias "$name"; then
+    if [[ $ALX_FORCE -ne 1 ]]; then
+      if [[ $ALX_STRICT -eq 1 ]]; then
+        warn "alias '$name' already exists in registry (use --force)"
+      fi
+      return 0
+    fi
+  fi
+
+  conflict_check "$name" "$ALX_FORCE" "$ALX_STRICT" 0
 
   local tags_json
   tags_json=$(split_tags_json "$tags")

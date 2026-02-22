@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+
+- Make `alx add` idempotent by default (no-op if alias exists)
+- Add `--strict` warning for existing aliases and keep `--force` to overwrite
+
 ## 0.1.1
 
 - Add installer and documentation updates

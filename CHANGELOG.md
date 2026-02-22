@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+- Installer now defaults to latest release tag instead of `main`
+
 ## 0.1.3
 
 - Allow non-identifier alias names (matching shell alias rules)

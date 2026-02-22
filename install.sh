@@ -1,9 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ALX_REPO="https://raw.githubusercontent.com/monkeymonk/alx/main"
+ALX_REPO_BASE="https://raw.githubusercontent.com/monkeymonk/alx"
 ALX_DATA="${XDG_DATA_HOME:-$HOME/.local/share}/alx"
 ALX_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/alx"
+
+_latest_tag() {
+  local api_url="https://api.github.com/repos/monkeymonk/alx/releases/latest"
+  local tag=""
+  if command -v curl &>/dev/null; then
+    tag=$(curl -fsSL "$api_url" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
+  elif command -v wget &>/dev/null; then
+    tag=$(wget -qO - "$api_url" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
+  else
+    echo "alx install: curl or wget required" >&2
+    exit 1
+  fi
+
+  if [[ -z "$tag" ]]; then
+    echo "alx install: failed to resolve latest release tag" >&2
+    exit 1
+  fi
+  printf '%s' "$tag"
+}
 
 _detect_shell_rc() {
   if [[ -n "${ZSH_VERSION:-}" ]] || [[ "$SHELL" == */zsh ]]; then
@@ -38,7 +57,10 @@ _patch_rc() {
   fi
 }
 
-echo "Installing alx..."
+ALX_VERSION="${ALX_VERSION:-$(_latest_tag)}"
+ALX_REPO="$ALX_REPO_BASE/$ALX_VERSION"
+
+echo "Installing alx ($ALX_VERSION)..."
 
 mkdir -p "$ALX_DATA/bin" "$ALX_DATA/lib" "$ALX_CONFIG"
 

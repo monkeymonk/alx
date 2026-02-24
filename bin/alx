@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ALX_VERSION="0.1.5"
+ALX_VERSION="0.2.0"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 LIB_DIR="${SCRIPT_DIR%/}/../lib"
@@ -12,8 +12,6 @@ LIB_DIR="${SCRIPT_DIR%/}/../lib"
 . "$LIB_DIR/logger.sh"
 # shellcheck disable=SC1090
 . "$LIB_DIR/store.sh"
-# shellcheck disable=SC1090
-. "$LIB_DIR/json.sh"
 # shellcheck disable=SC1090
 . "$LIB_DIR/conflict.sh"
 # shellcheck disable=SC1090

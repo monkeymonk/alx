@@ -62,28 +62,16 @@ assert_cmd_ok() {
   fi
 }
 
-json_get() {
+# Read a single field from a per-file alias store entry
+alias_field() {
   local file="$1"
-  local query="$2"
-  python3 - "$file" "$query" <<'PY'
-import json,sys
-file_path,query = sys.argv[1:3]
-with open(file_path, 'r', encoding='utf-8') as f:
-    data=json.load(f)
-val=data
-for part in query.split('.'):
-    if part == "":
-        continue
-    if isinstance(val, dict):
-        val=val.get(part)
-    else:
-        val=None
-        break
-if isinstance(val, list):
-    print(json.dumps(val))
-elif val is None:
-    print("null")
-else:
-    print(val)
-PY
+  local field="$2"
+  while IFS= read -r line || [[ -n $line ]]; do
+    local key="${line%%=*}"
+    local val="${line#*=}"
+    if [[ $key == "$field" ]]; then
+      printf '%s' "$val"
+      return
+    fi
+  done < "$file"
 }

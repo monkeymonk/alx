@@ -7,7 +7,6 @@ import_aliases() {
     error "file not found: $file"
     exit 1
   fi
-  require_jq_write
   ensure_store
 
   local meta_name=""
@@ -23,9 +22,9 @@ import_aliases() {
         meta_name=""
       fi
       if [[ $meta =~ (^|[[:space:]])desc=\"([^\"]*)\" ]]; then
-        meta_desc=${BASH_REMATCH[2]}
+        meta_desc=$(unescape_meta_desc "${BASH_REMATCH[2]}")
       elif [[ $meta =~ (^|[[:space:]])desc=([^[:space:]]+) ]]; then
-        meta_desc=${BASH_REMATCH[2]}
+        meta_desc=$(unescape_meta_desc "${BASH_REMATCH[2]}")
       else
         meta_desc=""
       fi
@@ -64,8 +63,6 @@ import_aliases() {
 
       conflict_check "$name" "$ALX_FORCE" "$ALX_STRICT"
 
-      local tags_json
-      tags_json=$(split_tags_json "$meta_tags")
       local origin_type
       if [[ -n $meta_name || -n $meta_desc || -n $meta_tags ]]; then
         origin_type="import"
@@ -73,7 +70,7 @@ import_aliases() {
         origin_type="legacy-import"
       fi
 
-      json_set_alias "$name" "$cmd" "$meta_desc" "$tags_json" "$origin_type" "$file" "$(now_utc)"
+      write_alias "$name" "$cmd" "$meta_desc" "$meta_tags" "$origin_type" "$file" "$(now_utc)"
 
       meta_name=""; meta_desc=""; meta_tags=""
     fi

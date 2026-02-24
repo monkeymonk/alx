@@ -8,7 +8,7 @@ conflict_check() {
   local check_registry="${4:-1}"
 
   if [[ $check_registry -eq 1 ]]; then
-    if json_has_alias "$name"; then
+    if alias_exists "$name"; then
       if [[ $force -ne 1 ]]; then
         error "alias '$name' already exists in registry (use --force)"
         exit 2

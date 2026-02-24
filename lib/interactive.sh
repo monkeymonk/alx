@@ -12,32 +12,10 @@ pick_alias() {
 
   local items=()
   local tab=$'\t'
-  while IFS= read -r entry; do
-    local name desc tags
-    if is_jq_available; then
-      name=$(printf '%s' "$entry" | jq -r '.key')
-      desc=$(printf '%s' "$entry" | jq -r '.value.desc // ""')
-      tags=$(printf '%s' "$entry" | jq -r '.value.tags // [] | join(",")')
-    else
-      read -r name desc tags < <(printf '%s' "$entry" | python3 - <<'PY'
-import json,sys
-try:
-    e=json.loads(sys.stdin.read())
-    v=e.get('value',{})
-    print(e.get('key',''))
-    print(v.get('desc') or '')
-    print(','.join(v.get('tags') or []))
-except Exception:
-    print('')
-    print('')
-    print('')
-PY
-)
-    fi
-    if [[ -n $name ]]; then
-      items+=("${name}${tab}${desc}${tab}${tags}")
-    fi
-  done < <(json_all_entries)
+  while IFS= read -r name; do
+    read_alias "$name"
+    items+=("${name}${tab}${_ALX_DESC}${tab}${_ALX_TAGS}")
+  done < <(list_alias_names)
 
   if [[ ${#items[@]} -eq 0 ]]; then
     error "no aliases found"

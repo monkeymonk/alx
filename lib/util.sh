@@ -6,17 +6,12 @@ ALX_TAGS=""
 ALX_FORCE=0
 ALX_STRICT=0
 
-is_jq_available() {
-  command -v jq >/dev/null 2>&1
-}
-
 now_utc() {
   date -u "+%Y-%m-%dT%H:%M:%SZ"
 }
 
 valid_name() {
   local name="$1"
-  # Match shell alias naming: any non-empty token without whitespace or '='.
   [[ $name =~ ^[^[:space:]=]+$ ]]
 }
 
@@ -28,8 +23,17 @@ shell_escape_single() {
 
 escape_meta_desc() {
   local s="$1"
+  local _dq='"'
   s=${s//\\/\\\\}
-  s=${s//"/\\"}
+  s="${s//$_dq/%22}"
+  printf "%s" "$s"
+}
+
+unescape_meta_desc() {
+  local s="$1"
+  local _dq='"'
+  s="${s//%22/$_dq}"
+  s="${s//\\\\/\\}"
   printf "%s" "$s"
 }
 
@@ -55,6 +59,8 @@ parse_add_flags() {
         ALX_STRICT=1
         ;;
       *)
+        error "unknown flag: $1"
+        exit 1
         ;;
     esac
     shift || true
@@ -73,38 +79,10 @@ parse_import_flags() {
         ALX_STRICT=1
         ;;
       *)
+        error "unknown flag: $1"
+        exit 1
         ;;
     esac
     shift || true
   done
-}
-
-split_tags_json() {
-  local tags="$1"
-  if [[ -z $tags ]]; then
-    printf '[]'
-    return
-  fi
-  IFS=',' read -r -a parts <<<"$tags"
-  local out="["
-  local first=1
-  local t
-  for t in "${parts[@]}"; do
-    t=${t## }
-    t=${t%% }
-    if [[ -z $t ]]; then
-      continue
-    fi
-    if [[ $first -eq 0 ]]; then
-      out+=" ,"
-    fi
-    first=0
-    out+="\"$t\""
-  done
-  out+="]"
-  printf '%s' "$out"
-}
-
-require_jq_write() {
-  return 0
 }

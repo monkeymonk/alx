@@ -67,7 +67,7 @@ mkdir -p "$ALX_DATA/bin" "$ALX_DATA/lib" "$ALX_CONFIG"
 _download "$ALX_REPO/bin/alx" "$ALX_DATA/bin/alx"
 chmod +x "$ALX_DATA/bin/alx"
 
-for lib in actions conflict doctor export import interactive json logger parser store util; do
+for lib in actions conflict doctor export import interactive logger parser store util; do
   _download "$ALX_REPO/lib/${lib}.sh" "$ALX_DATA/lib/${lib}.sh"
 done
 

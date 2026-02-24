@@ -4,124 +4,30 @@ set -euo pipefail
 doctor() {
   ensure_store
 
-  if is_jq_available; then
-    if ! read_store | jq empty >/dev/null 2>&1; then
-      error "invalid JSON in store"
-      exit 3
-    fi
-  else
-    if ! read_store | python3 - <<'PY'
-import json,sys
-try:
-    json.load(sys.stdin)
-except Exception:
-    sys.exit(1)
-PY
-    then
-      error "invalid JSON in store"
-      exit 3
-    fi
-  fi
+  declare -A _seen_cmds
+  while IFS= read -r name; do
+    read_alias "$name"
 
-  if is_jq_available; then
-    local broken
-    broken=$(read_store | jq -r 'to_entries[] | select((.value.cmd|type!="string" or length==0) or (.value.origin.type|type!="string" or length==0) or (.value.created_at|type!="string" or length==0) or (.value.tags|type!="array")) | .key')
-    if [[ -n $broken ]]; then
-      warn "broken metadata for:"
-      printf '%s\n' "$broken" >&2
-    fi
-
-    local dup
-    dup=$(read_store | jq -r 'to_entries | group_by(.value.cmd) | map(select(length>1)) | .[] | map(.key) | @tsv')
-    if [[ -n $dup ]]; then
-      warn "duplicate commands detected:"
-      printf '%s\n' "$dup" >&2
-    fi
-  else
-    local broken
-    broken=$(read_store | python3 - <<'PY'
-import json,sys
-try:
-    data=json.load(sys.stdin)
-except Exception:
-    sys.exit(0)
-out=[]
-for k,v in data.items():
-    if not isinstance(v, dict):
-        out.append(k)
-        continue
-    if not isinstance(v.get("cmd"), str) or len(v.get("cmd",""))==0:
-        out.append(k)
-        continue
-    origin=v.get("origin") or {}
-    if not isinstance(origin.get("type"), str) or len(origin.get("type",""))==0:
-        out.append(k)
-        continue
-    if not isinstance(v.get("created_at"), str) or len(v.get("created_at",""))==0:
-        out.append(k)
-        continue
-    if not isinstance(v.get("tags"), list):
-        out.append(k)
-        continue
-print("\\n".join(out))
-PY
-)
-    if [[ -n $broken ]]; then
-      warn "broken metadata for:"
-      printf '%s\n' "$broken" >&2
-    fi
-
-    local dup
-    dup=$(read_store | python3 - <<'PY'
-import json,sys
-try:
-    data=json.load(sys.stdin)
-except Exception:
-    sys.exit(0)
-by_cmd={}
-for k,v in data.items():
-    cmd=v.get("cmd")
-    if cmd is None:
-        continue
-    by_cmd.setdefault(cmd, []).append(k)
-out=[]
-for cmd,names in by_cmd.items():
-    if len(names)>1:
-        out.append("\\t".join(sorted(names)))
-print("\\n".join(out))
-PY
-)
-    if [[ -n $dup ]]; then
-      warn "duplicate commands detected:"
-      printf '%s\n' "$dup" >&2
-    fi
-  fi
-
-  while IFS= read -r entry; do
-    local name cmd
-    if is_jq_available; then
-      name=$(printf '%s' "$entry" | jq -r '.key')
-      cmd=$(printf '%s' "$entry" | jq -r '.value.cmd')
-    else
-      read -r name cmd < <(printf '%s' "$entry" | python3 - <<'PY'
-import json,sys
-try:
-    e=json.loads(sys.stdin.read())
-    v=e.get('value',{})
-    print(e.get('key',''))
-    print(v.get('cmd',''))
-except Exception:
-    print('')
-    print('')
-PY
-)
-    fi
-    if [[ -z $name || -z $cmd ]]; then
+    if [[ -z $_ALX_CMD ]]; then
+      warn "broken entry '$name': missing cmd"
       continue
     fi
-    local first=${cmd%% *}
+    if [[ -z $_ALX_ORIGIN_TYPE ]]; then
+      warn "broken entry '$name': missing origin_type"
+    fi
+    if [[ -z $_ALX_CREATED_AT ]]; then
+      warn "broken entry '$name': missing created_at"
+    fi
+
+    if [[ -n ${_seen_cmds[$_ALX_CMD]+x} ]]; then
+      warn "duplicate command: '$_ALX_CMD' used by '${_seen_cmds[$_ALX_CMD]}' and '$name'"
+    else
+      _seen_cmds["$_ALX_CMD"]="$name"
+    fi
+
+    local first=${_ALX_CMD%% *}
     if [[ -n $first ]] && ! command -v "$first" >/dev/null 2>&1; then
       warn "missing binary for '$name': $first"
     fi
-  done < <(json_all_entries)
+  done < <(list_alias_names)
 }

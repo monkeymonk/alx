@@ -22,20 +22,20 @@ alias legacy='ls -1'
 
 # quoted command with embedded single quote
 # alx:name=q desc="Quote test" tags=quote
-alias q='echo '\''hi'\''' 
+alias q='echo '\''hi'\'''
 SH
 
 "$ALX_BIN" import "$import_file"
 
-store="$XDG_CONFIG_HOME/alx/aliases.json"
+store_dir="$XDG_CONFIG_HOME/alx/aliases"
 
-assert_eq "echo hello" "$(json_get "$store" "foo.cmd")" "foo cmd"
-assert_eq "Hello World" "$(json_get "$store" "foo.desc")" "foo desc"
-assert_eq "[\"one\", \"two\"]" "$(json_get "$store" "foo.tags")" "foo tags"
+assert_eq "echo hello" "$(alias_field "$store_dir/foo" "cmd")"  "foo cmd"
+assert_eq "Hello World" "$(alias_field "$store_dir/foo" "desc")" "foo desc"
+assert_eq "one,two"     "$(alias_field "$store_dir/foo" "tags")" "foo tags"
 
-assert_eq "Say hi" "$(json_get "$store" "hi.desc")" "hi desc"
-assert_eq "[\"core\"]" "$(json_get "$store" "hi.tags")" "hi tags"
+assert_eq "Say hi" "$(alias_field "$store_dir/hi" "desc")" "hi desc"
+assert_eq "core"   "$(alias_field "$store_dir/hi" "tags")" "hi tags"
 
-assert_eq "legacy-import" "$(json_get "$store" "legacy.origin.type")" "legacy origin"
+assert_eq "legacy-import" "$(alias_field "$store_dir/legacy" "origin_type")" "legacy origin"
 
-assert_eq "echo 'hi'" "$(json_get "$store" "q.cmd")" "quoted cmd"
+assert_eq "echo 'hi'" "$(alias_field "$store_dir/q" "cmd")" "quoted cmd"

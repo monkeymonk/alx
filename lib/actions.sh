@@ -13,10 +13,9 @@ add_alias() {
     exit 1
   fi
 
-  require_jq_write
   ensure_store
 
-  if json_has_alias "$name"; then
+  if alias_exists "$name"; then
     if [[ $ALX_FORCE -ne 1 ]]; then
       if [[ $ALX_STRICT -eq 1 ]]; then
         warn "alias '$name' already exists in registry (use --force)"
@@ -27,10 +26,7 @@ add_alias() {
 
   conflict_check "$name" "$ALX_FORCE" "$ALX_STRICT" 0
 
-  local tags_json
-  tags_json=$(split_tags_json "$tags")
-
-  json_set_alias "$name" "$command" "$desc" "$tags_json" "manual" "" "$(now_utc)"
+  write_alias "$name" "$command" "$desc" "$tags" "manual" "" "$(now_utc)"
 
   if [[ $immediate -eq 1 ]]; then
     printf "alias %s='%s'\n" "$name" "$(shell_escape_single "$command")"
@@ -39,13 +35,12 @@ add_alias() {
 
 remove_alias() {
   local name="$1"
-  require_jq_write
   ensure_store
-  if ! json_has_alias "$name"; then
+  if ! alias_exists "$name"; then
     error "alias '$name' not found"
     exit 1
   fi
-  json_remove_alias "$name"
+  delete_alias_file "$name"
 }
 
 list_aliases() {
@@ -56,47 +51,18 @@ list_aliases() {
 
   ensure_store
   local rows=()
-  while IFS= read -r entry; do
-    local name cmd desc tags
-    if is_jq_available; then
-      name=$(printf '%s' "$entry" | jq -r '.key')
-      cmd=$(printf '%s' "$entry" | jq -r '.value.cmd')
-      desc=$(printf '%s' "$entry" | jq -r '.value.desc // ""')
-      tags=$(printf '%s' "$entry" | jq -r '.value.tags // [] | join(",")')
-    else
-      read -r name cmd desc tags < <(printf '%s' "$entry" | python3 - <<'PY'
-import json,sys
-try:
-    e=json.loads(sys.stdin.read())
-    v=e.get('value',{})
-    print(e.get('key',''))
-    print(v.get('cmd',''))
-    print(v.get('desc') or '')
-    print(','.join(v.get('tags') or []))
-except Exception:
-    print('')
-    print('')
-    print('')
-    print('')
-PY
-)
-    fi
-    if [[ -z $name ]]; then
-      continue
-    fi
-
+  while IFS= read -r name; do
+    read_alias "$name"
     if [[ $format == "table" ]]; then
-      cmd=${cmd//$'\t'/ }
-      desc=${desc//$'\t'/ }
-      tags=${tags//$'\t'/ }
-      rows+=("${name}"$'\t'"${cmd}"$'\t'"${desc}"$'\t'"${tags}")
+      rows+=("${name}"$'\t'"${_ALX_CMD}"$'\t'"${_ALX_DESC}"$'\t'"${_ALX_TAGS}")
     else
-      printf '%s\t%s\t%s\t%s\n' "$name" "$cmd" "$desc" "$tags"
+      printf '%s\t%s\t%s\t%s\n' "$name" "$_ALX_CMD" "$_ALX_DESC" "$_ALX_TAGS"
     fi
-  done < <(json_all_entries)
+  done < <(list_alias_names)
 
-  if [[ $format == "table" ]]; then
-    printf '%s\n' "${rows[@]}" | python3 -c 'import sys
+  if [[ $format == "table" ]] && [[ ${#rows[@]} -gt 0 ]]; then
+    printf '%s\n' "${rows[@]}" | python3 -c '
+import sys
 headers = ["NAME", "COMMAND", "DESCRIPTION", "TAGS"]
 rows = [line.rstrip("\n").split("\t") for line in sys.stdin if line.strip("\n") != ""]
 widths = [len(h) for h in headers]
@@ -115,96 +81,59 @@ for row in rows:
 }
 
 search_aliases() {
+  local pattern="$1"
   ensure_store
-  json_search_aliases "$1"
+  while IFS= read -r name; do
+    read_alias "$name"
+    if printf '%s %s %s %s' "$name" "$_ALX_CMD" "$_ALX_DESC" "$_ALX_TAGS" | \
+       grep -qE "$pattern" 2>/dev/null; then
+      printf '%s\n' "$name"
+    fi
+  done < <(list_alias_names)
 }
 
 show_alias() {
   local name="$1"
   ensure_store
-  local obj
-  obj=$(json_get_alias "$name")
-  if [[ $obj == "null" || -z $obj ]]; then
+  if ! alias_exists "$name"; then
     error "alias '$name' not found"
     exit 1
   fi
-
-  if is_jq_available; then
-    printf 'name: %s\n' "$name"
-    printf 'cmd: %s\n' "$(printf '%s' "$obj" | jq -r '.cmd')"
-    printf 'desc: %s\n' "$(printf '%s' "$obj" | jq -r '.desc // ""')"
-    printf 'tags: %s\n' "$(printf '%s' "$obj" | jq -r '.tags // [] | join(",")')"
-    printf 'origin.type: %s\n' "$(printf '%s' "$obj" | jq -r '.origin.type')"
-    printf 'origin.imported_from: %s\n' "$(printf '%s' "$obj" | jq -r '.origin.imported_from // ""')"
-    printf 'created_at: %s\n' "$(printf '%s' "$obj" | jq -r '.created_at')"
-  else
-    python3 - <<'PY' "$name" "$obj"
-import json,sys
-name=sys.argv[1]
-obj=json.loads(sys.argv[2])
-print(f"name: {name}")
-print(f"cmd: {obj.get('cmd','')}")
-print(f"desc: {obj.get('desc') or ''}")
-print(f"tags: {','.join(obj.get('tags') or [])}")
-origin=obj.get('origin') or {}
-print(f"origin.type: {origin.get('type','')}")
-print(f"origin.imported_from: {origin.get('imported_from') or ''}")
-print(f"created_at: {obj.get('created_at','')}")
-PY
-  fi
+  read_alias "$name"
+  printf 'name: %s\n' "$name"
+  printf 'cmd: %s\n' "$_ALX_CMD"
+  printf 'desc: %s\n' "$_ALX_DESC"
+  printf 'tags: %s\n' "$_ALX_TAGS"
+  printf 'origin.type: %s\n' "$_ALX_ORIGIN_TYPE"
+  printf 'origin.imported_from: %s\n' "$_ALX_ORIGIN_FROM"
+  printf 'created_at: %s\n' "$_ALX_CREATED_AT"
 }
 
 where_alias() {
   local name="$1"
   ensure_store
-  if ! json_has_alias "$name"; then
+  if ! alias_exists "$name"; then
     error "alias '$name' not found"
     exit 1
   fi
-  local obj
-  obj=$(json_get_alias "$name")
-  local origin_type origin_from
-  if is_jq_available; then
-    origin_type=$(printf '%s' "$obj" | jq -r '.origin.type')
-    origin_from=$(printf '%s' "$obj" | jq -r '.origin.imported_from // ""')
-  else
-    read -r origin_type origin_from < <(python3 - <<'PY' "$obj"
-import json,sys
-obj=json.loads(sys.argv[1])
-origin=obj.get('origin') or {}
-print(origin.get('type',''))
-print(origin.get('imported_from') or '')
-PY
-)
-  fi
-  printf 'registry: %s\n' "$(alx_store_path)"
-  printf 'origin.type: %s\n' "$origin_type"
-  printf 'origin.imported_from: %s\n' "$origin_from"
+  read_alias "$name"
+  printf 'registry: %s\n' "$(alx_alias_dir)"
+  printf 'file: %s\n' "$(alx_alias_file "$name")"
+  printf 'origin.type: %s\n' "$_ALX_ORIGIN_TYPE"
+  printf 'origin.imported_from: %s\n' "$_ALX_ORIGIN_FROM"
 }
 
 run_alias() {
   local name="$1"
   ensure_store
-  local obj
-  obj=$(json_get_alias "$name")
-  if [[ $obj == "null" || -z $obj ]]; then
+  if ! alias_exists "$name"; then
     error "alias '$name' not found"
     exit 1
   fi
-  local cmd
-  if is_jq_available; then
-    cmd=$(printf '%s' "$obj" | jq -r '.cmd')
-  else
-    cmd=$(python3 - <<'PY' "$obj"
-import json,sys
-obj=json.loads(sys.argv[1])
-print(obj.get('cmd',''))
-PY
-)
-  fi
-  if [[ -z $cmd ]]; then
+  read_alias "$name"
+  if [[ -z $_ALX_CMD ]]; then
     error "alias '$name' has empty command"
     exit 1
   fi
-  sh -c "$cmd"
+  sh -c "$_ALX_CMD"
 }

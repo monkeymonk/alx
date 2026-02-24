@@ -4,61 +4,16 @@ set -euo pipefail
 export_aliases() {
   ALX_QUIET=1
   ensure_store
-
-  while IFS= read -r entry; do
-    local name
-    local cmd
-    local desc
-    local tags
-    if is_jq_available; then
-      name=$(printf '%s' "$entry" | jq -r '.key')
-    else
-      name=$(printf '%s' "$entry" | python3 - <<'PY'
-import json,sys
-try:
-    e=json.loads(sys.stdin.read())
-    print(e.get('key',''))
-except Exception:
-    pass
-PY
-)
+  while IFS= read -r name; do
+    read_alias "$name"
+    local meta="# alx:name=${name}"
+    if [[ -n $_ALX_DESC ]]; then
+      meta+=" desc=\"$(escape_meta_desc "$_ALX_DESC")\""
     fi
-    if [[ -z $name ]]; then
-      continue
-    fi
-    if is_jq_available; then
-      cmd=$(printf '%s' "$entry" | jq -r '.value.cmd')
-      desc=$(printf '%s' "$entry" | jq -r '.value.desc // ""')
-      tags=$(printf '%s' "$entry" | jq -r '.value.tags // [] | join(",")')
-    else
-      read -r cmd desc tags < <(printf '%s' "$entry" | python3 - <<'PY'
-import json,sys
-try:
-    e=json.loads(sys.stdin.read())
-    v=e.get('value',{})
-    cmd=v.get('cmd','')
-    desc=v.get('desc') or ''
-    tags=','.join(v.get('tags') or [])
-    print(cmd)
-    print(desc)
-    print(tags)
-except Exception:
-    print('')
-    print('')
-    print('')
-PY
-)
-    fi
-
-    local meta
-    meta="# alx:name=${name}"
-    if [[ -n $desc ]]; then
-      meta+=" desc=\"$(escape_meta_desc "$desc")\""
-    fi
-    if [[ -n $tags ]]; then
-      meta+=" tags=${tags}"
+    if [[ -n $_ALX_TAGS ]]; then
+      meta+=" tags=${_ALX_TAGS}"
     fi
     printf '%s\n' "$meta"
-    printf "alias %s='%s'\n" "$name" "$(shell_escape_single "$cmd")"
-  done < <(json_all_entries)
+    printf "alias %s='%s'\n" "$name" "$(shell_escape_single "$_ALX_CMD")"
+  done < <(list_alias_names)
 }

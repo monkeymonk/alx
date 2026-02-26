@@ -2,6 +2,8 @@
 
 A structured, metadata-aware superset of shell `alias` that exports real aliases with deterministic, reversible metadata.
 
+![alx demo](demo.gif)
+
 ## Install
 
 Use the install script (it downloads the core files and updates your shell rc):
@@ -11,6 +13,7 @@ curl -fsSL https://raw.githubusercontent.com/monkeymonk/alx/main/install.sh | ba
 ```
 
 What the installer does:
+
 - Installs `alx` to `~/.local/share/alx/bin/alx`.
 - Installs `lib/*.sh` to `~/.local/share/alx/lib/`.
 - Adds `~/.local/share/alx/bin` to your PATH in your shell rc file.
@@ -82,7 +85,7 @@ alx pick --exec
 FZF search (custom):
 
 ```bash
-alx list | fzf --with-nth=1,2,3 --delimiter=$'\t' | cut -f1
+alx falx 'eval "$(alx list | fzf --delimiter=$'\''\t'\'' --with-nth=1,2,3 | cut -f1)"' --desc "Fuzy search and execute alias" --tags "alias,fuzzy"
 ```
 
 ## Philosophy

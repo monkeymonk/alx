@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Add VHS demo tape and GIF showcasing all commands
+- Embed demo GIF in README
+
 ## 0.2.0
 
 - Replace JSON store with per-file format: one file per alias in `~/.config/alx/aliases/`

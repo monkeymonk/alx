@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+- New inline comment format for export: `alias name='cmd' # desc [tag1, tag2]`
+- Import now parses inline `# desc [tags]` from bare alias lines (single and double-quoted)
+- Backward-compatible: import still supports legacy `# alx:` metadata format
+- Drop `--` prefix from exported alias lines for cleaner output
+
 ## 0.3.0
 
 - Add `alx import -` to import aliases from stdin (`alias | alx import -`)

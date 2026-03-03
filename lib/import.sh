@@ -45,14 +45,46 @@ import_aliases() {
       local rhs=${BASH_REMATCH[4]}
       rhs=${rhs#"${rhs%%[![:space:]]*}"}
       rhs=${rhs%"${rhs##*[![:space:]]}"}
-      local cmd=""
-      if [[ $rhs =~ ^\'(.*)\'$ ]]; then
+      local cmd="" inline_comment=""
+
+      # Single-quoted with trailing comment
+      if [[ $rhs =~ ^(\'.*\')[[:space:]]+#[[:space:]]*(.*) ]]; then
+        local quoted="${BASH_REMATCH[1]}"
+        inline_comment="${BASH_REMATCH[2]}"
+        inline_comment="${inline_comment%"${inline_comment##*[![:space:]]}"}"
+        if [[ $quoted =~ ^\'(.*)\'$ ]]; then
+          cmd=${BASH_REMATCH[1]}
+          cmd=${cmd//"'\\''"/"'"}
+        fi
+      # Double-quoted with trailing comment
+      elif [[ $rhs =~ ^(\".*\")[[:space:]]+#[[:space:]]*(.*) ]]; then
+        local quoted="${BASH_REMATCH[1]}"
+        inline_comment="${BASH_REMATCH[2]}"
+        inline_comment="${inline_comment%"${inline_comment##*[![:space:]]}"}"
+        if [[ $quoted =~ ^\"(.*)\"$ ]]; then
+          cmd=${BASH_REMATCH[1]}
+        fi
+      # Single-quoted without comment
+      elif [[ $rhs =~ ^\'(.*)\'$ ]]; then
         cmd=${BASH_REMATCH[1]}
         cmd=${cmd//"'\\''"/"'"}
+      # Double-quoted without comment
       elif [[ $rhs =~ ^\"(.*)\"$ ]]; then
         cmd=${BASH_REMATCH[1]}
       else
         cmd=$rhs
+      fi
+
+      # Parse inline comment for desc/tags when no alx metadata present
+      if [[ -n $inline_comment && -z $meta_name && -z $meta_desc && -z $meta_tags ]]; then
+        if [[ $inline_comment =~ ^(.*)\[([^]]*)\][[:space:]]*$ ]]; then
+          meta_tags="${BASH_REMATCH[2]}"
+          meta_tags="${meta_tags// /}"
+          meta_desc="${BASH_REMATCH[1]}"
+          meta_desc="${meta_desc%"${meta_desc##*[![:space:]]}"}"
+        else
+          meta_desc="$inline_comment"
+        fi
       fi
 
       if [[ -n $meta_name ]]; then

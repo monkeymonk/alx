@@ -47,7 +47,7 @@ assert_eq "legacy-import" "$(alias_field "$store2/l" "origin_type")" "legacy imp
 # Deterministic export order
 export_out="$temp_dir/export2.sh"
 "$ALX_BIN" export --shell > "$export_out"
-mapfile -t names < <(grep '^# alx:name=' "$export_out" | sed -E 's/^# alx:name=([^ ]+).*/\1/')
+mapfile -t names < <(grep '^alias ' "$export_out" | sed -E "s/^alias ([^=]+)=.*/\1/")
 expected=(gs l ll)
 if [[ ${#names[@]} -lt 3 ]]; then
   echo "unexpected export count" >&2

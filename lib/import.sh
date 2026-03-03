@@ -3,7 +3,11 @@ set -euo pipefail
 
 import_aliases() {
   local file="$1"
-  if [[ ! -f $file ]]; then
+  local input_source="$file"
+  if [[ $file == "-" ]]; then
+    input_source="/dev/stdin"
+    file="stdin"
+  elif [[ ! -f $file ]]; then
     error "file not found: $file"
     exit 1
   fi
@@ -36,9 +40,9 @@ import_aliases() {
       continue
     fi
 
-    if [[ $line =~ ^alias[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
-      local name=${BASH_REMATCH[1]}
-      local rhs=${BASH_REMATCH[2]}
+    if [[ $line =~ ^(alias[[:space:]]+(--[[:space:]]+)?)?([^[:space:]=]+)=(.*)$ ]]; then
+      local name=${BASH_REMATCH[3]}
+      local rhs=${BASH_REMATCH[4]}
       rhs=${rhs#"${rhs%%[![:space:]]*}"}
       rhs=${rhs%"${rhs##*[![:space:]]}"}
       local cmd=""
@@ -61,7 +65,11 @@ import_aliases() {
         continue
       fi
 
-      conflict_check "$name" "$ALX_FORCE" "$ALX_STRICT"
+      if alias_exists "$name" && [[ $ALX_FORCE -ne 1 ]]; then
+        warn "skipping '$name': already exists (use --force to overwrite)"
+        meta_name=""; meta_desc=""; meta_tags=""
+        continue
+      fi
 
       local origin_type
       if [[ -n $meta_name || -n $meta_desc || -n $meta_tags ]]; then
@@ -74,5 +82,5 @@ import_aliases() {
 
       meta_name=""; meta_desc=""; meta_tags=""
     fi
-  done < "$file"
+  done < "$input_source"
 }

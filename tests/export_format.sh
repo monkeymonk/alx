@@ -14,5 +14,5 @@ trap teardown_temp EXIT
 export_out=$("$ALX_BIN" export --shell)
 
 assert_contains "$export_out" "# alx:name=gs desc=\"Git status\" tags=git,core" "metadata line"
-assert_contains "$export_out" "alias gs='git status'" "alias line"
-assert_contains "$export_out" "alias q='echo '\''hi'\'''" "single quote escaping"
+assert_contains "$export_out" "alias -- gs='git status'" "alias line"
+assert_contains "$export_out" "alias -- q='echo '\''hi'\'''" "single quote escaping"

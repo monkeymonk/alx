@@ -14,6 +14,6 @@ export_aliases() {
       meta+=" tags=${_ALX_TAGS}"
     fi
     printf '%s\n' "$meta"
-    printf "alias %s='%s'\n" "$name" "$(shell_escape_single "$_ALX_CMD")"
+    printf "alias -- %s='%s'\n" "$name" "$(shell_escape_single "$_ALX_CMD")"
   done < <(list_alias_names)
 }

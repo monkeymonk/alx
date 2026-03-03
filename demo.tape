@@ -102,6 +102,15 @@ Type "alx import /tmp/alx-export.sh --force"
 Enter
 Sleep 2000ms
 
+# -------- Import from stdin --------
+Type `echo "alias hi='echo hi'" | alx import -`
+Enter
+Sleep 2000ms
+
+Type "alx show hi"
+Enter
+Sleep 2000ms
+
 # -------- Run --------
 Type "alx run greet"
 Enter

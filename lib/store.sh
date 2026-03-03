@@ -65,49 +65,6 @@ list_alias_names() {
   done
 }
 
-# Migrates legacy aliases.json to per-file format (runs once, backs up old file)
-_migrate_legacy_store() {
-  local legacy_dir
-  if [[ -n ${XDG_CONFIG_HOME-} ]]; then
-    legacy_dir="$XDG_CONFIG_HOME/alx"
-  else
-    legacy_dir="$HOME/.config/alx"
-  fi
-  local legacy="${legacy_dir}/aliases.json"
-  [[ -f $legacy ]] || return 0
-
-  local dir
-  dir="$(alx_alias_dir)"
-  mkdir -p "$dir"
-
-  python3 - "$legacy" "$dir" <<'PY'
-import json, os, sys
-legacy, alias_dir = sys.argv[1], sys.argv[2]
-try:
-    data = json.load(open(legacy))
-except Exception:
-    sys.exit(0)
-for name, v in data.items():
-    dest = os.path.join(alias_dir, name)
-    if os.path.exists(dest):
-        continue
-    origin = v.get('origin') or {}
-    tmp = dest + '.mig'
-    with open(tmp, 'w') as f:
-        f.write(f"cmd={v.get('cmd','')}\n")
-        f.write(f"desc={v.get('desc') or ''}\n")
-        f.write(f"tags={','.join(v.get('tags') or [])}\n")
-        f.write(f"origin_type={origin.get('type','manual')}\n")
-        f.write(f"origin_imported={origin.get('imported_from') or ''}\n")
-        f.write(f"created_at={v.get('created_at','')}\n")
-    os.rename(tmp, dest)
-PY
-
-  mv "$legacy" "${legacy}.migrated"
-  warn "migrated legacy JSON store to per-file format (backup: ${legacy}.migrated)"
-}
-
 ensure_store() {
-  _migrate_legacy_store
   mkdir -p "$(alx_alias_dir)"
 }

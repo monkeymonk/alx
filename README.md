@@ -22,8 +22,6 @@ To uninstall, remove the PATH line from your rc file and delete `~/.local/share/
 
 If you prefer manual install, add `bin/alx` to your PATH.
 
-`jq` is optional; if installed it is used for faster JSON handling.
-
 ## Usage
 
 Add aliases:
@@ -73,6 +71,8 @@ Import and export:
 ```bash
 alx export --shell > aliases.sh
 alx import aliases.sh
+alias | alx import -        # import current shell aliases via stdin
+alx import --shell           # import from ~/.bashrc, ~/.zshrc, etc.
 ```
 
 Interactive picker:
@@ -92,34 +92,68 @@ alx falx 'eval "$(alx list | fzf --delimiter=$'\''\t'\'' --with-nth=1,2,3 | cut 
 
 `alx` stores aliases as structured data, detects conflicts, and exports deterministic native aliases. It augments `alias` rather than replacing it.
 
-## Integration Guide
+## Shell Integration
 
-Add this to your shell profile.
+### Basic: load alx aliases on shell startup
 
-Bash (`~/.bashrc`):
+Add to your `~/.bashrc` or `~/.zshrc`:
 
 ```bash
 eval "$(alx export --shell)"
 ```
 
-Zsh (`~/.zshrc`):
+### Full: use alx as a drop-in replacement for `alias`
+
+This wrapper intercepts `alias name='cmd'` calls, stores them in alx, and defines the real shell alias. Plain `alias` (no args) and `alias name` (lookup) work unchanged.
 
 ```bash
+# Load alx aliases
 eval "$(alx export --shell)"
+
+# Intercept alias definitions so they persist in alx
+alias() {
+  if [[ $# -eq 0 ]]; then
+    builtin alias
+  elif [[ "$1" == -* ]]; then
+    builtin alias "$@"
+  elif [[ "$1" == *=* ]]; then
+    local name="${1%%=*}" cmd="${1#*=}"
+    alx add "$name" "$cmd" --force 2>/dev/null
+    builtin alias "$@"
+  else
+    builtin alias "$@"
+  fi
+}
+```
+
+With this, every `alias gs='git status'` you run also saves to alx. Remove the wrapper anytime — your shell aliases still work normally.
+
+### Bootstrap: import existing aliases
+
+```bash
+# Import aliases from your current shell session
+alias | alx import -
+
+# Or scan your rc files directly
+alx import --shell
 ```
 
 ## Storage
 
-Aliases are stored in:
+Aliases are stored as one file per alias in:
 
-- `$XDG_CONFIG_HOME/alx/aliases.json`
-- fallback: `~/.config/alx/aliases.json`
+- `$XDG_CONFIG_HOME/alx/aliases/`
+- fallback: `~/.config/alx/aliases/`
+
+To clear all stored aliases:
+
+```bash
+rm -rf ~/.config/alx/aliases
+```
 
 ## Requirements
 
 - Bash 4+ or Zsh 5+
-- Python 3
-- `jq` optional
 
 ## License
 

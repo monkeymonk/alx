@@ -61,22 +61,26 @@ list_aliases() {
   done < <(list_alias_names)
 
   if [[ $format == "table" ]] && [[ ${#rows[@]} -gt 0 ]]; then
-    printf '%s\n' "${rows[@]}" | python3 -c '
-import sys
-headers = ["NAME", "COMMAND", "DESCRIPTION", "TAGS"]
-rows = [line.rstrip("\n").split("\t") for line in sys.stdin if line.strip("\n") != ""]
-widths = [len(h) for h in headers]
-for row in rows:
-    for i, value in enumerate(row):
-        if i < len(widths):
-            widths[i] = max(widths[i], len(value))
-def format_row(values):
-    padded = [values[i].ljust(widths[i]) for i in range(len(widths))]
-    return " | ".join(padded)
-print(format_row(headers))
-print("-+-".join("-" * w for w in widths))
-for row in rows:
-    print(format_row(row))'
+    local headers=("NAME" "COMMAND" "DESCRIPTION" "TAGS")
+    local widths=(${#headers[0]} ${#headers[1]} ${#headers[2]} ${#headers[3]})
+    local i
+    for row in "${rows[@]}"; do
+      IFS=$'\t' read -r f0 f1 f2 f3 <<< "$row"
+      (( ${#f0} > widths[0] )) && widths[0]=${#f0}
+      (( ${#f1} > widths[1] )) && widths[1]=${#f1}
+      (( ${#f2} > widths[2] )) && widths[2]=${#f2}
+      (( ${#f3} > widths[3] )) && widths[3]=${#f3}
+    done
+    printf "%-${widths[0]}s | %-${widths[1]}s | %-${widths[2]}s | %-${widths[3]}s\n" "${headers[@]}"
+    printf "%-${widths[0]}s-+-%-${widths[1]}s-+-%-${widths[2]}s-+-%-${widths[3]}s\n" \
+      "$(printf '%*s' "${widths[0]}" '' | tr ' ' '-')" \
+      "$(printf '%*s' "${widths[1]}" '' | tr ' ' '-')" \
+      "$(printf '%*s' "${widths[2]}" '' | tr ' ' '-')" \
+      "$(printf '%*s' "${widths[3]}" '' | tr ' ' '-')"
+    for row in "${rows[@]}"; do
+      IFS=$'\t' read -r f0 f1 f2 f3 <<< "$row"
+      printf "%-${widths[0]}s | %-${widths[1]}s | %-${widths[2]}s | %-${widths[3]}s\n" "$f0" "$f1" "$f2" "$f3"
+    done
   fi
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ALX_VERSION="0.2.1"
+ALX_VERSION="0.3.0"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 LIB_DIR="${SCRIPT_DIR%/}/../lib"
@@ -40,7 +40,7 @@ Usage:
   alx where <name>
   alx run <name>
   alx export --shell
-  alx import <file> [--force] [--strict]
+  alx import <file|-|--shell> [--force] [--strict]
   alx doctor
   alx pick [--exec]
   alx --immediate name="command" [--desc TEXT] [--tags a,b]
@@ -143,10 +143,32 @@ case "$cmd" in
       usage
       exit 1
     fi
-    file=$1
-    shift
-    parse_import_flags "$@"
-    import_aliases "$file"
+    if [[ $1 == "--shell" ]]; then
+      shift
+      parse_import_flags "$@"
+      _rc_files=(
+        "$HOME/.bash_aliases"
+        "$HOME/.bashrc"
+        "$HOME/.zshrc"
+        "$HOME/.aliases"
+      )
+      _found=0
+      for rc in "${_rc_files[@]}"; do
+        if [[ -f $rc ]]; then
+          _found=1
+          import_aliases "$rc"
+        fi
+      done
+      if [[ $_found -eq 0 ]]; then
+        error "no shell config files found"
+        exit 1
+      fi
+    else
+      file=$1
+      shift
+      parse_import_flags "$@"
+      import_aliases "$file"
+    fi
     ;;
   doctor)
     doctor

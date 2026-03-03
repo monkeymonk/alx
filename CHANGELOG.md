@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0
+
+- Add `alx import -` to import aliases from stdin (`alias | alx import -`)
+- Add `alx import --shell` to import aliases from shell rc files (~/.bashrc, ~/.zshrc, etc.)
+- Replace Python table formatter with pure bash — zero external dependencies
+- Remove legacy JSON store migration code and Python 3 requirement
+- Remove unused `lib/parser.sh` placeholder
+- Install script now prompts before modifying PATH (skips in non-interactive mode)
+- Add shell integration guide to README with drop-in `alias` wrapper snippet
+
 ## 0.2.1
 
 - Add VHS demo tape and GIF showcasing all commands

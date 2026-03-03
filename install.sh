@@ -67,13 +67,24 @@ mkdir -p "$ALX_DATA/bin" "$ALX_DATA/lib" "$ALX_CONFIG"
 _download "$ALX_REPO/bin/alx" "$ALX_DATA/bin/alx"
 chmod +x "$ALX_DATA/bin/alx"
 
-for lib in actions conflict doctor export import interactive logger parser store util; do
+for lib in actions conflict doctor export import interactive logger store util; do
   _download "$ALX_REPO/lib/${lib}.sh" "$ALX_DATA/lib/${lib}.sh"
 done
 
 SHELL_RC="$(_detect_shell_rc)"
-_patch_rc "$SHELL_RC"
+
+if [[ -t 0 ]]; then
+  printf 'Add alx to PATH in %s? [y/N] ' "$SHELL_RC"
+  read -r answer
+  if [[ "$answer" =~ ^[Yy]$ ]]; then
+    _patch_rc "$SHELL_RC"
+  else
+    echo "Skipped PATH update. Add $ALX_DATA/bin to your PATH manually."
+  fi
+else
+  echo "Non-interactive install — skipping PATH update."
+  echo "Add $ALX_DATA/bin to your PATH manually."
+fi
 
 echo ""
 echo "alx installed."
-echo "Restart your shell or run: source $SHELL_RC"

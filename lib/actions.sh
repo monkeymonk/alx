@@ -63,7 +63,6 @@ list_aliases() {
   if [[ $format == "table" ]] && [[ ${#rows[@]} -gt 0 ]]; then
     local headers=("NAME" "COMMAND" "DESCRIPTION" "TAGS")
     local widths=(${#headers[0]} ${#headers[1]} ${#headers[2]} ${#headers[3]})
-    local i
     for row in "${rows[@]}"; do
       IFS=$'\t' read -r f0 f1 f2 f3 <<< "$row"
       (( ${#f0} > widths[0] )) && widths[0]=${#f0}

@@ -2,6 +2,7 @@
 set -euo pipefail
 
 export_aliases() {
+  # shellcheck disable=SC2034  # read by lib/logger.sh's log()
   ALX_QUIET=1
   ensure_store
   while IFS= read -r name; do

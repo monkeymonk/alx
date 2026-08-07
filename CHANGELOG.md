@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.1
+
+- Fix `shellcheck` findings: correct `SC1090` to `SC1091` disable directives on
+  the `lib/*.sh` sourcing lines in `bin/alx`, remove the unused `local i` in
+  `list --table`'s formatter, and mark cross-file-consumed flag globals
+  (`ALX_QUIET`, `ALX_DESC`, `ALX_TAGS`, `ALX_FORCE`, `ALX_STRICT`) with
+  targeted `SC2034` disables. No behavior change; `shellcheck bin/alx lib/*.sh`
+  is now clean.
+
 ## 0.4.0
 
 - New inline comment format for export: `alias name='cmd' # desc [tag1, tag2]`

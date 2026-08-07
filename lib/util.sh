@@ -46,10 +46,12 @@ parse_add_flags() {
     case "$1" in
       --desc)
         shift
+        # shellcheck disable=SC2034  # read by bin/alx's add dispatch
         ALX_DESC=${1-}
         ;;
       --tags)
         shift
+        # shellcheck disable=SC2034  # read by bin/alx's add dispatch
         ALX_TAGS=${1-}
         ;;
       --force)
@@ -73,9 +75,11 @@ parse_import_flags() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --force)
+        # shellcheck disable=SC2034  # read by lib/import.sh
         ALX_FORCE=1
         ;;
       --strict)
+        # shellcheck disable=SC2034  # read by lib/import.sh (currently unused there; parity with parse_add_flags)
         ALX_STRICT=1
         ;;
       *)

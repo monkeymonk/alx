@@ -1,28 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ALX_VERSION="0.4.0"
+ALX_VERSION="0.4.1"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 LIB_DIR="${SCRIPT_DIR%/}/../lib"
 
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090,SC1091
 . "$LIB_DIR/util.sh"
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090,SC1091
 . "$LIB_DIR/logger.sh"
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090,SC1091
 . "$LIB_DIR/store.sh"
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090,SC1091
 . "$LIB_DIR/conflict.sh"
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090,SC1091
 . "$LIB_DIR/actions.sh"
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090,SC1091
 . "$LIB_DIR/export.sh"
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090,SC1091
 . "$LIB_DIR/import.sh"
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090,SC1091
 . "$LIB_DIR/interactive.sh"
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090,SC1091
 . "$LIB_DIR/doctor.sh"
 
 usage() {
